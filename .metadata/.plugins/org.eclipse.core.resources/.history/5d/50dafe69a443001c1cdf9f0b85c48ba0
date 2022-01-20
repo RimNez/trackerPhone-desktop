@@ -1,0 +1,262 @@
+package views;
+
+import java.awt.EventQueue;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JDesktopPane;
+import java.awt.Font;
+import javax.swing.JTextField;
+import javax.swing.table.DefaultTableModel;
+
+import com.toedter.calendar.JCalendar;
+
+import models.User;
+import servers.UserRemote;
+
+import javax.swing.JTable;
+import javax.swing.JScrollPane;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.swing.JButton;
+import java.awt.event.ActionListener;
+import java.rmi.RemoteException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+
+public class Main {
+
+	private JFrame frame;
+	private JTextField nom;
+	private JTextField prenom;
+	private JTextField email;
+	private JTextField telephone;
+	private JTable table;
+	DefaultTableModel model;
+	private static UserRemote remote;
+	int id=-1;
+
+	/**
+	 * Launch the application.
+	 */
+	private static UserRemote lookUpUser() throws NamingException {
+		Hashtable<Object, Object> config = new Hashtable<Object, Object>();
+		config.put(Context.INITIAL_CONTEXT_FACTORY, "org.wildfly.naming.client.WildFlyInitialContextFactory");
+		config.put(Context.PROVIDER_URL, "http-remoting://localhost:8080");
+		final Context context = new InitialContext(config);
+		return (UserRemote) context.lookup("ejb:/trackerServer/UserService!servers.UserRemote");
+				
+	}
+	
+	
+	public static void main(String[] args) {
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					Main window = new Main();
+					window.frame.setVisible(true);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+
+	void load() throws RemoteException {
+        model.setRowCount(0);
+        /*List<User> list= new ArrayList<User>(); 
+        Iterator it = remote.findAll().iterator(); 
+        while(it.hasNext()){ 
+          Object[] line = (Object[]) it.next(); 
+          User u = new User(); 
+          u.setId((int) line[0]);
+          u.setNom(line[3].toString()); 
+          u.setPrenom(line[4].toString()); 
+          u.setEmail(line[2].toString()); 
+          u.setTelephone(line[5].toString());
+          u.setDateNaissance((Date) line[1]);
+          list.add(u); 
+        }*/
+        for(User u : remote.findAll()){
+            model.addRow(new Object[]{
+                u.getId(),
+                u.getNom(),
+                u.getPrenom(),
+                u.getEmail(),
+                u.getTelephone(),
+                u.getDateNaissance()
+            });
+        }
+    }
+	/**
+	 * Create the application.
+	 * @throws NamingException 
+	 * @throws RemoteException 
+	 */
+	public Main() throws NamingException, RemoteException {
+		initialize();
+		remote = lookUpUser();
+		load();
+	}
+
+	/**
+	 * Initialize the contents of the frame.
+	 */
+	private void initialize() {
+		frame = new JFrame();
+		frame.setBounds(100, 100, 873, 623);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		
+		JPanel panel = new JPanel();
+		panel.setBackground(new Color(245, 222, 179));
+		frame.getContentPane().add(panel, BorderLayout.CENTER);
+		panel.setLayout(null);
+		
+		JLabel lblNewLabel = new JLabel("Nom:");
+		lblNewLabel.setFont(new Font("Tahoma", Font.PLAIN, 20));
+		lblNewLabel.setBounds(34, 96, 61, 24);
+		panel.add(lblNewLabel);
+		
+		JLabel lblPrnom = new JLabel("Pr\u00E9nom:");
+		lblPrnom.setFont(new Font("Tahoma", Font.PLAIN, 20));
+		lblPrnom.setBounds(34, 134, 82, 24);
+		panel.add(lblPrnom);
+		
+		JLabel lblEmail = new JLabel("Email:");
+		lblEmail.setFont(new Font("Tahoma", Font.PLAIN, 20));
+		lblEmail.setBounds(34, 168, 61, 24);
+		panel.add(lblEmail);
+		
+		JLabel lblNewLabel_2_2 = new JLabel("T\u00E9l\u00E9phone:");
+		lblNewLabel_2_2.setFont(new Font("Tahoma", Font.PLAIN, 20));
+		lblNewLabel_2_2.setBounds(34, 209, 130, 24);
+		panel.add(lblNewLabel_2_2);
+		
+		nom = new JTextField();
+		nom.setBounds(149, 103, 117, 24);
+		panel.add(nom);
+		nom.setColumns(10);
+		
+		prenom = new JTextField();
+		prenom.setColumns(10);
+		prenom.setBounds(149, 141, 117, 24);
+		panel.add(prenom);
+		
+		email = new JTextField();
+		email.setColumns(10);
+		email.setBounds(149, 175, 117, 24);
+		panel.add(email);
+		
+		telephone = new JTextField();
+		telephone.setColumns(10);
+		telephone.setBounds(149, 214, 117, 24);
+		panel.add(telephone);
+		
+		JScrollPane scrollPane = new JScrollPane();
+		scrollPane.setBounds(298, 41, 508, 485);
+		panel.add(scrollPane);
+		
+		table = new JTable();
+		table.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				id = Integer.parseInt(model.getValueAt(table.getSelectedRow(), 0).toString());
+				nom.setText(model.getValueAt(table.getSelectedRow(), 1).toString());
+				prenom.setText(model.getValueAt(table.getSelectedRow(), 2).toString());
+				email.setText(model.getValueAt(table.getSelectedRow(), 3).toString());
+				telephone.setText(model.getValueAt(table.getSelectedRow(), 4).toString());
+				
+			}
+		});
+		model = new DefaultTableModel();
+		Object[] column = {"Id","Nom","Prénom","Email","Téléphone","Date de naissance"};
+		final Object[] row = new Object[5];
+		model.setColumnIdentifiers(column);
+		table.setModel(model);
+		scrollPane.setViewportView(table);
+		
+		JButton btnNewButton = new JButton("Ajouter");
+		btnNewButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if(nom.getText().equals("") || prenom.getText().equals("") || email.getText().equals("") ||telephone.getText().equals(""))
+				{
+					JOptionPane.showMessageDialog(null, "Veulliez completer les champs");
+				}
+				else {
+				remote.create(new User(nom.getText(),prenom.getText(),email.getText(),new Date(),telephone.getText()));
+		        
+				try {
+					load();
+				} catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				nom.setText("");
+				prenom.setText("");
+				email.setText("");
+				telephone.setText("");
+				JOptionPane.showMessageDialog(null, "Success");
+				}
+			}
+		});
+		btnNewButton.setFont(new Font("Tahoma", Font.PLAIN, 14));
+		btnNewButton.setBounds(34, 343, 88, 37);
+		panel.add(btnNewButton);
+		
+		JButton btnSupprimer = new JButton("Supprimer");
+		btnSupprimer.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				remote.delete(remote.findById(id));
+				try {
+					load();
+				} catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				//model.removeRow(i);
+			}
+		});
+		btnSupprimer.setFont(new Font("Tahoma", Font.PLAIN, 14));
+		btnSupprimer.setBounds(145, 343, 97, 37);
+		panel.add(btnSupprimer);
+		
+		JButton btnModifier = new JButton("Modifier");
+		btnModifier.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if(nom.getText().isEmpty() && prenom.getText().isEmpty()&& 
+						email.getText().isEmpty()&& telephone.getText().isEmpty()) {
+					JOptionPane.showMessageDialog(panel, "Champs vides !!");
+				}else {
+					remote.update(new User(Integer.valueOf(model.getValueAt(table.getSelectedRow(), 0).toString()),
+							nom.getText(),prenom.getText(),email.getText(),
+							new Date(),telephone.getText()));
+					try {
+						load();
+					} catch (RemoteException e1) {
+						e1.printStackTrace();
+					}
+				}
+			}
+		});
+		btnModifier.setFont(new Font("Tahoma", Font.PLAIN, 14));
+		btnModifier.setBounds(34, 395, 88, 37);
+		panel.add(btnModifier);
+		
+		JButton btnEffacer = new JButton("Effacer");
+		btnEffacer.setFont(new Font("Tahoma", Font.PLAIN, 14));
+		btnEffacer.setBounds(145, 395, 97, 37);
+		panel.add(btnEffacer);
+	}
+}
